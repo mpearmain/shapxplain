@@ -8,7 +8,6 @@ that help LLMs interpret and explain SHAP values effectively.
 from typing import Dict, Any, List
 from shapxplain.schemas import SHAPFeatureContribution, SignificanceLevel
 
-
 # System prompt for SHAP explanations
 DEFAULT_SYSTEM_PROMPT = """
 You are an AI assistant specializing in machine learning explanations and interpretability.
@@ -103,11 +102,11 @@ Please identify:
 
 # Prompt Generators
 def generate_explanation_prompt(
-    model_type: str,
-    prediction: float,
-    features: List[SHAPFeatureContribution],
-    prediction_class: str = None,
-    context: Dict[str, Any] = None,
+        model_type: str,
+        prediction: float,
+        features: List[SHAPFeatureContribution],
+        prediction_class: str = None,
+        context: Dict[str, Any] = None,
 ) -> str:
     """
     Generate a detailed prompt for explaining a single prediction.
@@ -136,10 +135,10 @@ def generate_explanation_prompt(
 
 
 def generate_batch_insight_prompt(
-    model_type: str,
-    predictions: List[float],
-    common_features: List[str],
-    confidence_summary: Dict[SignificanceLevel, int],
+        model_type: str,
+        predictions: List[float],
+        common_features: List[str],
+        confidence_summary: Dict[SignificanceLevel, int],
 ) -> str:
     """
     Generate a prompt for analyzing batch predictions.
