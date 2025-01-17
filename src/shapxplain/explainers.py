@@ -173,19 +173,20 @@ class ShapLLMExplainer:
     @lru_cache(maxsize=1000)
     def _query_llm(self, prompt: str) -> dict:
         """
-        Query LLM with caching for repeated prompts.
+        Query the LLM agent synchronously.
 
         Args:
-            prompt: The prompt to send to the LLM.
+            prompt (str): The prompt to send to the LLM.
 
         Returns:
-            dict: LLM response data.
+            dict: Response data from the LLM.
 
         Raises:
-            RuntimeError: If LLM query fails.
+            RuntimeError: If the query fails.
         """
         try:
-            return self.llm_agent.run_sync(prompt).data
+            result = self.llm_agent.run_sync(prompt)
+            return result.data  # Extract the data from RunResult
         except Exception as e:
             raise RuntimeError(f"Failed to query the LLM: {e}") from e
 

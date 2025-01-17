@@ -4,13 +4,13 @@ version = "0.1.0"
 description = "SHAP and LLM-based explanations for model interpretability"
 authors = ["Mike Pearmain <michael.pearmain@gmail.com>"]
 readme = "README.md"
-packages = [{include = "shapxplain", from = "src"}]
+packages = [{ include = "shapxplain", from = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.12"
 scikit-learn = "^1.6.1"
-numba = "^0.60.0"
-shap = "^0.41.0"
+numba = "0.60.0"
+shap = "^0.46.0"
 plotly = "^5.24.1"
 pydantic-ai = "^0.0.19"
 python-dotenv = "^1.0.1"
@@ -21,6 +21,13 @@ pytest-cov = "^4.1.0"
 black = "^23.3.0"
 isort = "^5.12.0"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry.group.notebook]
+optional = true
+
+[tool.poetry.group.notebook.dependencies]
+notebook = "^7.3.2"
+ipykernel = "^6.29.0"
+ipywidgets = "^8.1.1"
+tqdm = "^4.66.1"
+numpy = "2.0.2"
+nest_asyncio = "1.6.0"
