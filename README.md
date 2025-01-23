@@ -1,146 +1,154 @@
 # SHAPXplain
 
-**SHAPXplain** is a Python package that enhances machine learning interpretability by combining SHAP-based feature
-attributions with the explanatory power of Large Language Models (LLMs). With SHAPXplain, you can go beyond numerical
-attributions to generate natural language explanations, helping domain experts and stakeholders better understand model
-predictions.
+**SHAPXplain** combines SHAP (SHapley Additive exPlanations) with Large Language Models (LLMs) to provide natural language explanations of machine learning model predictions. The package helps bridge the gap between technical SHAP values and human-understandable insights.
 
 ## Features
 
-- **SHAP Value Integration**: Compute SHAP values to quantify feature importance.
-- **LLM-Driven Explanations**: Use LLMs like OpenAI GPT to generate detailed, human-readable explanations.
-- **Extensible Framework**: Supports various machine learning models and SHAP implementations.
-- **Customisable Insights**: Tailor explanations using prompt engineering and domain-specific language.
-- **End-to-End Workflow**: Seamlessly integrate SHAP, LLMs, and visualisation in a unified pipeline.
-
----
-
-## Why SHAPXplain?
-
-Machine learning models often act as "black boxes," producing predictions without clear explanations. SHAP values
-provide a robust foundation for feature importance, but translating these values into actionable insights can be
-challenging for non-technical audiences. **SHAPXplain bridges this gap** by leveraging the natural language capabilities
-of LLMs to interpret SHAP values and communicate their meaning effectively.
-
----
+- **Natural Language Explanations**: Convert complex SHAP values into clear, actionable explanations using LLMs
+- **Flexible LLM Integration**: Works with any LLM via the pydantic-ai interface
+- **Structured Outputs**: Get standardized explanation formats including summaries, detailed analysis, and recommendations
+- **Batch Processing**: Handle multiple predictions efficiently
+- **Confidence Levels**: Understand the reliability of explanations
+- **Feature Interaction Analysis**: Identify and explain how features work together
 
 ## Installation
-
-Install SHAPXplain using `pip`:
 
 ```bash
 pip install shapxplain
 ```
 
-# Quick Start
+## Quick Start
 
-## 1. Train a Model and Generate SHAP Values
+Here's a complete example using the Iris dataset:
 
 ```python
+import numpy as np
 from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier
 from shap import TreeExplainer
+from shapxplain import ShapLLMExplainer
+from pydantic_ai import Agent
 
 # Load data and train model
 data = load_iris()
 X, y = data.data, data.target
-model = RandomForestClassifier()
+model = RandomForestClassifier(random_state=42)
 model.fit(X, y)
 
 # Generate SHAP values
 explainer = TreeExplainer(model)
 shap_values = explainer.shap_values(X)
-```
 
-### 2. Generate LLM-Driven Explanations
-
-```python 
-from shapxplain.core.main import ShapLLMExplainer
-
-# Instantiate SHAPXplain with OpenAI GPT or other supported LLM
+# Create LLM agent and SHAPXplain explainer
+llm_agent = Agent(model="openai:gpt-4")  # Or your preferred LLM
 llm_explainer = ShapLLMExplainer(
     model=model,
-    shap_explainer=explainer,
-    tokenizer="openai",  # Tokenizer for the LLM (e.g., OpenAI GPT)
-    prompt_template="Explain the impact of {feature} on the prediction:"
+    llm_agent=llm_agent,
+    feature_names=data.feature_names,
+    significance_threshold=0.1
 )
 
-# Generate explanations for a specific data point
+# Explain a single prediction
 data_point = X[0]
+prediction_probs = model.predict_proba(data_point.reshape(1, -1))[0]
+predicted_class_idx = model.predict(data_point.reshape(1, -1))[0]
+prediction_class = data.target_names[predicted_class_idx]
+
+# Get class-specific SHAP values
+class_shap_values = shap_values[predicted_class_idx][0]
+
+# Generate explanation
 explanation = llm_explainer.explain(
-    data=data_point,
-    shap_values=shap_values[0]
+    shap_values=class_shap_values,
+    data_point=data_point,
+    prediction=prediction_probs[predicted_class_idx],
+    prediction_class=prediction_class,
+    additional_context={
+        "dataset": "Iris",
+        "feature_descriptions": {
+            "sepal length": "Length of the sepal in cm",
+            "sepal width": "Width of the sepal in cm",
+            "petal length": "Length of the petal in cm",
+            "petal width": "Width of the petal in cm"
+        }
+    }
 )
 
-print(explanation)
+# Access different parts of the explanation
+print("Summary:", explanation.summary)
+print("\nDetailed Explanation:", explanation.detailed_explanation)
+print("\nRecommendations:", explanation.recommendations)
+print("\nConfidence Level:", explanation.confidence_level)
 ```
 
-### 3. Visualise Explanations
+## Explanation Structure
+
+The package provides structured explanations with the following components:
 
 ```python
-llm_explainer.visualise(data_point, shap_values[0])
+class SHAPExplanationResponse:
+    summary: str  # Brief overview of key drivers
+    detailed_explanation: str  # Comprehensive analysis
+    recommendations: List[str]  # Actionable insights
+    confidence_level: str  # high/medium/low
+    feature_interactions: Dict[str, str]  # How features work together
+    features: List[SHAPFeatureContribution]  # Detailed feature impacts
 ```
 
-### Example Output
+## Batch Processing
 
-### Example Output
-
-Suppose you're analysing a RandomForest model predicting species in the Iris dataset. For a specific data point:
-
-#### SHAP Values:
-
-| Feature      | SHAP Value | Impact on Prediction |
-|--------------|------------|----------------------|
-| Petal Length | +0.75      | Strong Positive      |
-| Sepal Width  | -0.20      | Weak Negative        |
-| Sepal Length | +0.05      | Marginal Positive    |
-| Petal Width  | +0.10      | Moderate Positive    |
-
-#### LLM Explanation:
-
-- "The **Petal Length** strongly increases the likelihood of this sample belonging to the target class because longer
-  petals are highly indicative of this species."
-- "The **Sepal Width** slightly reduces the likelihood, likely due to overlapping characteristics with other species."
-- "Overall, the prediction is primarily driven by Petal Length and moderately influenced by Petal Width."
-
----
-
-### Advanced Usage
-
-#### Custom Prompt Templates
-
-You can design your own prompt templates to tailor the explanation style:
+Process multiple predictions efficiently:
 
 ```python
-prompt_template = """
-You are an AI assistant specialising in machine learning. 
-Given the SHAP values below, explain their impact on the prediction in simple terms.
-Feature: {feature}, SHAP Value: {shap_value}
-"""
+batch_response = llm_explainer.explain_batch(
+    shap_values_batch=shap_values,
+    data_points=X,
+    predictions=predictions,
+    batch_size=5  # Optional: control batch size
+)
 
-llm_explainer.set_prompt_template(prompt_template)
+# Access batch results
+for response in batch_response.responses:
+    print(response.summary)
+
+# Get batch insights
+print("Batch Insights:", batch_response.batch_insights)
+print("Summary Statistics:", batch_response.summary_statistics)
 ```
 
+## Advanced Usage
+
+### Custom LLM Configuration
+
 ```python
-prompt_template = """
-You are an AI assistant specialising in machine learning. 
-Given the SHAP values below, explain their impact on the prediction in simple terms.
-Feature: {feature}, SHAP Value: {shap_value}
-"""
-llm_explainer.set_prompt_template(prompt_template)
+# Use a different LLM model
+llm_agent = Agent(
+    model="anthropic:claude-v2",
+    system_prompt="You are an expert in explaining machine learning predictions..."
+)
+
+llm_explainer = ShapLLMExplainer(
+    model=model,
+    llm_agent=llm_agent,
+    feature_names=feature_names,
+    significance_threshold=0.15  # Adjust significance threshold
+)
 ```
 
-### Using Different LLMs
+### Additional Context
 
-SHAPXplain supports multiple LLMs:
-
-```python
-llm_explainer.set_tokenizer("huggingface")  # Use HuggingFace transformers
-```
-
-Batch Explanations
-Generate explanations for multiple data points:
+Provide domain-specific context for better explanations:
 
 ```python
-batch_explanations = llm_explainer.explain_batch(data=X, shap_values=shap_values)
+explanation = llm_explainer.explain(
+    shap_values=class_shap_values,
+    data_point=data_point,
+    prediction=prediction,
+    additional_context={
+        "domain": "medical_diagnosis",
+        "feature_descriptions": feature_descriptions,
+        "reference_ranges": reference_ranges,
+        "measurement_units": units
+    }
+)
 ```
