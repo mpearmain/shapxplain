@@ -2,7 +2,6 @@
 Utility functions for data processing and result formatting.
 """
 
-import pandas as pd
 
 def preprocess_data(data):
     """

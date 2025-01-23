@@ -10,16 +10,19 @@ from shapxplain.schemas import SHAPFeatureContribution, SignificanceLevel
 
 # System prompt for SHAP explanations
 DEFAULT_SYSTEM_PROMPT = """
-You are an AI assistant specializing in machine learning explanations and interpretability.
-Your primary task is to help users understand the predictions made by machine learning models
-by interpreting SHAP (SHapley Additive exPlanations) values.
+You are an AI assistant specializing in explaining machine learning predictions in clear, practical terms.
+Your role is to help users understand why a model made specific predictions and what actions they can take
+based on this understanding.
 
-Remember to:
-1. Focus on the most significant features first
-2. Explain in clear, non-technical terms
-3. Provide specific, actionable insights when possible
-4. Consider feature interactions where relevant
-5. Always tie explanations back to the actual prediction
+Follow these principles in your explanations:
+1. Use natural language without technical jargon - never mention terms like "SHAP values" or "coefficients"
+2. Focus on the practical meaning and real-world implications of model decisions
+3. Provide concrete, actionable insights that users can implement
+4. Consider the relationships between different factors
+5. Ground all explanations in the context of the specific use case
+6. Frame recommendations in terms of practical steps that can improve outcomes
+7. When discussing feature importance, explain why certain factors matter in relatable terms
+8. Consider both individual factors and how they work together
 """
 
 
@@ -57,29 +60,45 @@ def format_context(context: Dict[str, Any]) -> str:
 
 # Templates
 SINGLE_PREDICTION_EXPLANATION_TEMPLATE = """
-Model Information:
-- Type: {model_type}
-- Prediction: {prediction}
-{class_info}
+Context:
+The {model_type} analyzed this case and predicted: {prediction} {class_info}
 
-Feature Contributions (ordered by importance):
+Key Factors Analyzed:
 {feature_contributions}
 
-Context:
+Additional Context:
 {context}
 
-Please provide:
-1. A concise summary of the key factors driving this prediction
-2. A detailed explanation of how significant features contribute
-3. Any notable feature interactions or patterns
-4. Specific, actionable recommendations based on this analysis
-5. Any potential caveats or areas of uncertainty
+Based on this information, provide a comprehensive analysis in the following format:
 
-Your response should be structured as:
-- Summary: Brief overview of key drivers
-- Detailed Analysis: Feature-by-feature breakdown
-- Recommendations: Actionable insights
-- Confidence Level: Your confidence in this explanation
+1. A clear summary of the main factors driving this prediction
+2. A natural explanation of how different factors work together with no mention of the technical model or SHAP values
+3. Practical recommendations that could influence future outcomes
+4. Any important considerations or limitations to keep in mind
+
+Return your analysis as a JSON object with these exact fields
+Return only the JSON object without any other text or formatting.:
+{{
+    "summary": "A clear, jargon-free overview of the key factors",
+    "detailed_explanation": "A natural explanation of how different factors work together and their practical implications for an educated but not expert human",
+    "recommendations": [
+        "Specific, actionable step 1",
+        "Specific, actionable step 2"
+    ],
+    "confidence_level": "high",  // Must be: high, medium, or low
+    "feature_interactions": {{
+        "factor combination 1": "How these factors work together in practical terms"
+    }},
+    "features": [
+        {{
+            "feature_name": "factor_name",
+            "shap_value": 0.5,
+            "original_value": 10,
+            "contribution_direction": "increase",  // Must be: increase, decrease, or neutral
+            "significance": "high"  // Must be: high, medium, or low
+        }}
+    ]
+}}
 """
 
 BATCH_INSIGHT_TEMPLATE = """

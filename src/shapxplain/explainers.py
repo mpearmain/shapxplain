@@ -13,6 +13,7 @@ from collections import Counter
 from functools import lru_cache
 import numpy as np
 import pandas as pd
+import json
 from pydantic_ai import Agent
 
 from shapxplain.schemas import (
@@ -170,25 +171,48 @@ class ShapLLMExplainer:
             return SignificanceLevel.MEDIUM
         return SignificanceLevel.LOW
 
+    @staticmethod
+    def _clean_json_response(text: str) -> str:
+        """Clean JSON response by removing Markdown code blocks if present.
+
+        Args:
+            text: Raw response text from LLM
+
+        Returns:
+            str: Cleaned JSON string
+        """
+        # Remove Markdown code block markers if present
+        if text.startswith("```") and text.endswith("```"):
+            lines = text.split("\n")
+            # Remove first and last lines (```json and ```)
+            text = "\n".join(lines[1:-1])
+        return text.strip()
+
     @lru_cache(maxsize=1000)
     def _query_llm(self, prompt: str) -> dict:
         """
-        Query the LLM agent synchronously.
+        Query the LLM agent and ensure it returns a valid dictionary response.
 
         Args:
             prompt (str): The prompt to send to the LLM.
 
         Returns:
-            dict: Response data from the LLM.
+            dict: Parsed JSON response from the LLM.
 
         Raises:
-            RuntimeError: If the query fails.
+            RuntimeError: If the query fails or response is invalid.
         """
+        result = None
         try:
             result = self.llm_agent.run_sync(prompt)
-            return result.data  # Extract the data from RunResult
+            response_text = result.data
+            cleaned_text = self._clean_json_response(response_text)
+            return json.loads(cleaned_text)  # Expecting JSON
+        except json.JSONDecodeError:
+            response_text = result.data if result else '<no response>'
+            raise RuntimeError(f"LLM response is not valid JSON: {response_text}")
         except Exception as e:
-            raise RuntimeError(f"Failed to query the LLM: {e}") from e
+            raise RuntimeError(f"Failed to query the LLM: {e}")
 
     def explain(
             self,
