@@ -13,13 +13,13 @@ from shapxplain.schemas import (
 )
 
 __all__ = [
-    'ShapLLMExplainer',
-    'SHAPFeatureContribution',
-    'SHAPExplanationRequest',
-    'SHAPExplanationResponse',
-    'SHAPBatchExplanationResponse',
-    'ContributionDirection',
-    'SignificanceLevel',
+    "ShapLLMExplainer",
+    "SHAPFeatureContribution",
+    "SHAPExplanationRequest",
+    "SHAPExplanationResponse",
+    "SHAPBatchExplanationResponse",
+    "ContributionDirection",
+    "SignificanceLevel",
 ]
 
-__version__ = '0.1.0'
+__version__ = "0.1.0"

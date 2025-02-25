@@ -33,6 +33,7 @@ class ContributionDirection(str, Enum):
         DECREASE: Negative SHAP value, pushes prediction lower than the base value
         NEUTRAL: Zero or near-zero SHAP value, minimal impact on prediction
     """
+
     INCREASE = "increase"
     DECREASE = "decrease"
     NEUTRAL = "neutral"
@@ -51,6 +52,7 @@ class SignificanceLevel(str, Enum):
         MEDIUM: Moderate contribution (typically threshold <= |SHAP| < 2*threshold)
         LOW: Minor contribution (typically |SHAP| < threshold)
     """
+
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
@@ -72,6 +74,7 @@ class SHAPFeatureContribution(BaseModel):
         contribution_direction: Whether this feature increased/decreased the prediction
         significance: Categorized importance level based on SHAP value magnitude
     """
+
     feature_name: str = Field(description="Name or identifier of the feature")
     shap_value: float = Field(description="SHAP value quantifying feature importance")
     original_value: Any = Field(description="Original feature value from input data")
@@ -90,9 +93,9 @@ class SHAPFeatureContribution(BaseModel):
                 "shap_value": 0.75,
                 "original_value": 45,
                 "contribution_direction": "increase",
-                "significance": "high"
+                "significance": "high",
             }
-        }
+        },
     )
 
 
@@ -112,11 +115,11 @@ class SHAPExplanationRequest(BaseModel):
         features: List of feature contributions with their SHAP values
         context: Optional additional context to enhance explanation quality
     """
+
     model_type: str = Field(description="Type/architecture of ML model being explained")
     prediction: float = Field(description="Model's numerical prediction or probability")
     prediction_class: Optional[str] = Field(
-        None,
-        description="Predicted class label for classification tasks"
+        None, description="Predicted class label for classification tasks"
     )
     features: List[SHAPFeatureContribution] = Field(
         description="List of feature contributions with SHAP values"
@@ -145,6 +148,7 @@ class SHAPExplanationResponse(BaseModel):
         confidence_level: LLM's confidence in the explanation
         feature_interactions: Optional analysis of feature interactions
     """
+
     summary: str = Field(description="Concise summary of key prediction drivers")
     detailed_explanation: str = Field(
         description="Comprehensive analysis of SHAP values and their implications"
@@ -181,6 +185,7 @@ class SHAPBatchExplanationResponse(BaseModel):
         summary_statistics: Aggregated metrics and insights across all explanations
         batch_insights: Cross-request patterns and observations
     """
+
     responses: List[SHAPExplanationResponse] = Field(
         description="List of individual SHAP explanations"
     )
@@ -196,14 +201,14 @@ class SHAPBatchExplanationResponse(BaseModel):
                     "total_processed": 100,
                     "high_confidence": 75,
                     "medium_confidence": 20,
-                    "low_confidence": 5
+                    "low_confidence": 5,
                 },
                 "batch_insights": [
                     "Feature 'age' was consistently important",
-                    "Strong interaction between 'income' and 'education'"
-                ]
+                    "Strong interaction between 'income' and 'education'",
+                ],
             }
-        }
+        },
     )
 
     def model_post_init(self, __context: Any) -> None:

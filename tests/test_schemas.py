@@ -15,7 +15,7 @@ def sample_feature_contribution():
         "shap_value": 0.5,
         "original_value": 10,
         "contribution_direction": "increase",
-        "significance": "high"
+        "significance": "high",
     }
 
 
@@ -30,7 +30,7 @@ def sample_features(sample_feature_contribution):
             original_value=20,
             contribution_direction=ContributionDirection.DECREASE,
             significance=SignificanceLevel.MEDIUM,
-        )
+        ),
     ]
 
 

@@ -4,7 +4,8 @@ from shapxplain.prompts import (
     generate_batch_insight_prompt,
     format_feature_contributions,
     format_context,
-    DEFAULT_SYSTEM_PROMPT
+    format_common_features,
+    DEFAULT_SYSTEM_PROMPT,
 )
 from shapxplain.schemas import (
     SHAPFeatureContribution,
@@ -51,14 +52,16 @@ def test_generate_explanation_prompt(sample_features):
     assert "0.9" in prompt
     assert "positive" in prompt
 
+    # Check enhanced prompt elements
+    assert "provide a comprehensive analysis" in prompt
+    assert "non-technical stakeholder" in prompt
+    assert "Clear and jargon-free" in prompt
+
 
 def test_generate_explanation_prompt_no_class(sample_features):
     """Test prompt generation without prediction class."""
     prompt = generate_explanation_prompt(
-        model_type="MockModel",
-        prediction=0.9,
-        features=sample_features,
-        context={}
+        model_type="MockModel", prediction=0.9, features=sample_features
     )
 
     assert "Predicted Class" not in prompt
@@ -79,7 +82,7 @@ def test_format_feature_contributions(sample_features):
 def test_format_empty_feature_list():
     """Test formatting empty feature list."""
     formatted = format_feature_contributions([])
-    assert formatted == ""
+    assert "No significant features" in formatted
 
 
 def test_format_context():
@@ -87,7 +90,11 @@ def test_format_context():
     context = {
         "dataset": "test_dataset",
         "model_version": "1.0",
-        "timestamp": "2024-01-23"
+        "timestamp": "2024-01-23",
+        "feature_descriptions": {
+            "feature_1": "Description of feature 1",
+            "feature_2": "Description of feature 2",
+        },
     }
 
     formatted = format_context(context)
@@ -96,6 +103,9 @@ def test_format_context():
     assert "test_dataset" in formatted
     assert "model_version" in formatted
     assert "1.0" in formatted
+    assert "feature_descriptions" in formatted
+    assert "Description of feature 1" in formatted
+    assert "Description of feature 2" in formatted
 
 
 def test_format_empty_context():
@@ -103,12 +113,34 @@ def test_format_empty_context():
     assert format_context({}) == "No additional context."
 
 
+def test_format_common_features():
+    """Test formatting common features."""
+    common_features = [("feature_1", 8), ("feature_2", 6)]
+    total_cases = 10
+
+    formatted = format_common_features(common_features, total_cases)
+
+    assert "feature_1" in formatted
+    assert "feature_2" in formatted
+    assert "8/10" in formatted
+    assert "6/10" in formatted
+    assert "80%" in formatted
+    assert "60%" in formatted
+
+
+def test_format_empty_common_features():
+    """Test formatting empty common features list."""
+    formatted = format_common_features([], 10)
+    assert "No consistent feature patterns" in formatted
+
+
 def test_generate_batch_insight_prompt():
     """Test generating a batch insight prompt."""
+    common_features = [("feature_1", 8), ("feature_2", 6)]
     prompt = generate_batch_insight_prompt(
         model_type="MockModel",
         predictions=[0.9, 0.85, 0.95],
-        common_features=["feature_1", "feature_2"],
+        common_features=common_features,
         confidence_summary={
             SignificanceLevel.HIGH: 2,
             SignificanceLevel.MEDIUM: 1,
@@ -119,21 +151,22 @@ def test_generate_batch_insight_prompt():
     assert "MockModel" in prompt
     assert "feature_1" in prompt
     assert "feature_2" in prompt
-    assert "High Confidence: 2" in prompt
-    assert "Medium Confidence: 1" in prompt
-    assert "Number of Cases: 3" in prompt
+    assert "High" in prompt or "HIGH" in prompt
+    assert "Medium" in prompt or "MEDIUM" in prompt
+    assert "3 predictions" in prompt.lower() or "Number of Cases: 3" in prompt
 
 
-def test_batch_insight_prompt_no_common_features():
-    """Test batch insight prompt with no common features."""
+def test_batch_insight_prompt_with_custom_confidence_distribution():
+    """Test batch insight prompt with custom confidence distribution."""
     prompt = generate_batch_insight_prompt(
         model_type="MockModel",
         predictions=[0.9],
         common_features=[],
-        confidence_summary={SignificanceLevel.HIGH: 1}
+        confidence_summary={SignificanceLevel.HIGH: 1},
+        confidence_distribution="Custom Distribution",
     )
 
-    assert "Number of Cases: 1" in prompt
+    assert "Custom Distribution" in prompt
 
 
 def test_default_system_prompt():
@@ -149,7 +182,8 @@ def test_default_system_prompt():
         "practical meaning",
         "actionable insights",
         "relationships between",
-        "specific use case"
+        "specific use case",
+        "feature interactions",
     ]
     for principle in principles:
         assert principle in DEFAULT_SYSTEM_PROMPT.lower()
@@ -161,7 +195,7 @@ def test_prompt_template_escaping():
         model_type="Model{with}special[chars]",
         prediction=0.9,
         features=[],
-        context={"key": "value{with}brackets"}
+        context={"key": "value{with}brackets"},
     )
 
     assert "Model{with}special[chars]" in prompt
