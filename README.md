@@ -1,5 +1,11 @@
 # SHAPXplain
 
+[![PyPI version](https://img.shields.io/pypi/v/shapxplain.svg)](https://pypi.org/project/shapxplain/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/shapxplain.svg)](https://pypi.org/project/shapxplain/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI Status](https://github.com/mpearmain/shapxplain/actions/workflows/ci.yml/badge.svg)](https://github.com/mpearmain/shapxplain/actions)
+[![Documentation Status](https://readthedocs.org/projects/shapxplain/badge/?version=latest)](https://shapxplain.readthedocs.io/en/latest/?badge=latest)
+
 SHAPXplain combines SHAP (SHapley Additive exPlanations) with Large Language Models (LLMs) to provide natural language explanations of machine learning model predictions. The package helps bridge the gap between technical SHAP values and human-understandable insights.
 
 ## Features
@@ -16,9 +22,37 @@ SHAPXplain combines SHAP (SHapley Additive exPlanations) with Large Language Mod
 
 ## Installation
 
+You can install SHAPXplain using pip:
+
 ```bash
 pip install shapxplain
 ```
+
+Or with Poetry:
+
+```bash
+poetry add shapxplain
+```
+
+### API Key Setup
+
+SHAPXplain uses LLMs through the pydantic-ai interface. You'll need to set up API keys for your preferred provider:
+
+```python
+# For OpenAI
+import os
+os.environ["OPENAI_API_KEY"] = "your-api-key"
+
+# Or using a .env file
+from dotenv import load_dotenv
+load_dotenv()  # Will load OPENAI_API_KEY from .env file
+```
+
+Supported providers via pydantic-ai include:
+- OpenAI (environment variable: `OPENAI_API_KEY`)
+- Anthropic (environment variable: `ANTHROPIC_API_KEY`)
+- DeepSeek (environment variable: `DEEPSEEK_API_KEY`)
+- Others as supported by pydantic-ai
 
 ## Quick Start
 
@@ -189,6 +223,37 @@ except RuntimeError as e:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Documentation
+
+For detailed documentation, tutorials, and API reference, visit:
+[https://shapxplain.readthedocs.io/](https://shapxplain.readthedocs.io/)
+
+## Development
+
+To set up the development environment:
+
+```bash
+# Clone the repo
+git clone https://github.com/mpearmain/shapxplain.git
+cd shapxplain
+
+# Install with development dependencies
+poetry install --with dev
+```
+
+Run tests:
+
+```bash
+poetry run pytest
+```
+
+Format code:
+
+```bash
+poetry run black src tests
+poetry run ruff check --fix src tests
+```
 
 ## License
 

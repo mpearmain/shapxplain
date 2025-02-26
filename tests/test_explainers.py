@@ -4,7 +4,7 @@ import json
 import logging
 from dataclasses import dataclass
 import asyncio
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, AsyncMock
 from shapxplain.explainers import ShapLLMExplainer
 from shapxplain.schemas import (
     SHAPExplanationResponse,
@@ -65,7 +65,7 @@ def mock_explainer(mock_agent):
     """Fixture to provide a ShapLLMExplainer with a mock agent."""
     # Set logger to a higher level to avoid cluttering test output
     logger.setLevel(logging.WARNING)
-    
+
     mock_model = MagicMock()
     mock_model.__class__.__name__ = "MockModel"
     return ShapLLMExplainer(
@@ -139,9 +139,9 @@ def test_process_shap_values(mock_explainer):
     assert contributions[0].significance == SignificanceLevel.HIGH
 
 
-def test_determine_direction():
+def test_determine_direction(mock_agent):
     """Test contribution direction determination."""
-    explainer = ShapLLMExplainer(model=MagicMock())
+    explainer = ShapLLMExplainer(model=MagicMock(), llm_agent=mock_agent)
 
     assert explainer._determine_direction(0.5) == ContributionDirection.INCREASE
     assert explainer._determine_direction(-0.5) == ContributionDirection.DECREASE
@@ -157,9 +157,11 @@ def test_input_validation(mock_explainer):
         )
 
 
-def test_significance_levels():
+def test_significance_levels(mock_agent):
     """Test significance level calculation."""
-    explainer = ShapLLMExplainer(model=MagicMock(), significance_threshold=0.5)
+    explainer = ShapLLMExplainer(
+        model=MagicMock(), llm_agent=mock_agent, significance_threshold=0.5
+    )
 
     assert (
         explainer._determine_significance(1.5) == SignificanceLevel.HIGH

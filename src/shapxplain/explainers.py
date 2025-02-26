@@ -14,7 +14,6 @@ from collections import Counter
 from functools import lru_cache
 import asyncio
 import time
-import logging
 import numpy as np
 import pandas as pd
 import json
@@ -101,8 +100,12 @@ class ShapLLMExplainer:
         self.retry_delay = retry_delay
         self._query_llm_impl = lru_cache(maxsize=cache_size)(self._query_llm_impl)
 
-        logger.info(f"Initializing ShapLLMExplainer with model type: {model.__class__.__name__}")
-        logger.debug(f"Significance threshold: {significance_threshold}, Max retries: {max_retries}")
+        logger.info(
+            f"Initializing ShapLLMExplainer with model type: {model.__class__.__name__}"
+        )
+        logger.debug(
+            f"Significance threshold: {significance_threshold}, Max retries: {max_retries}"
+        )
 
         # Initialize LLM agent
         if llm_agent:
@@ -110,7 +113,9 @@ class ShapLLMExplainer:
             logger.info(f"Using provided LLM agent: {type(llm_agent).__name__}")
         else:
             model_name = "openai:gpt-4o-mini"  # Default model
-            logger.info(f"No LLM agent provided, creating default agent with model: {model_name}")
+            logger.info(
+                f"No LLM agent provided, creating default agent with model: {model_name}"
+            )
             self.llm_agent = Agent(
                 model=model_name, system_prompt=system_prompt or DEFAULT_SYSTEM_PROMPT
             )
@@ -272,10 +277,14 @@ class ShapLLMExplainer:
         """
         result = None
         try:
-            logger.debug(f"Sending query to LLM with prompt length: {len(prompt)} chars")
+            logger.debug(
+                f"Sending query to LLM with prompt length: {len(prompt)} chars"
+            )
             result = self.llm_agent.run_sync(prompt)
             response_text = result.data
-            logger.debug(f"Received LLM response with length: {len(response_text)} chars")
+            logger.debug(
+                f"Received LLM response with length: {len(response_text)} chars"
+            )
             cleaned_text = self._clean_json_response(response_text)
             return json.loads(cleaned_text)  # Expecting JSON
         except json.JSONDecodeError:
@@ -301,30 +310,42 @@ class ShapLLMExplainer:
         """
         for attempt in range(self.max_retries + 1):
             try:
-                logger.debug(f"Sending async query to LLM, attempt {attempt+1}/{self.max_retries+1}")
+                logger.debug(
+                    f"Sending async query to LLM, attempt {attempt+1}/{self.max_retries+1}"
+                )
                 result = await self.llm_agent.run(prompt)
                 response_text = result.data
-                logger.debug(f"Received async LLM response with length: {len(response_text)} chars")
+                logger.debug(
+                    f"Received async LLM response with length: {len(response_text)} chars"
+                )
                 cleaned_text = self._clean_json_response(response_text)
                 return json.loads(cleaned_text)  # Expecting JSON
             except json.JSONDecodeError:
                 if attempt == self.max_retries:
-                    logger.error(f"LLM response is not valid JSON after {self.max_retries} attempts")
+                    logger.error(
+                        f"LLM response is not valid JSON after {self.max_retries} attempts"
+                    )
                     raise RuntimeError(
                         f"LLM response is not valid JSON after {self.max_retries} attempts"
                     )
                 # Exponential backoff
                 delay = self.retry_delay * (2**attempt)
-                logger.warning(f"JSON decode error, retrying in {delay:.2f}s (attempt {attempt+1}/{self.max_retries})")
+                logger.warning(
+                    f"JSON decode error, retrying in {delay:.2f}s (attempt {attempt+1}/{self.max_retries})"
+                )
                 await asyncio.sleep(delay)
             except Exception as e:
                 if attempt == self.max_retries:
-                    logger.error(f"Failed to query the LLM after {self.max_retries} attempts: {str(e)}")
+                    logger.error(
+                        f"Failed to query the LLM after {self.max_retries} attempts: {str(e)}"
+                    )
                     raise RuntimeError(
                         f"Failed to query the LLM after {self.max_retries} attempts: {e}"
                     )
                 delay = self.retry_delay * (2**attempt)
-                logger.warning(f"LLM query error: {str(e)}, retrying in {delay:.2f}s (attempt {attempt+1}/{self.max_retries})")
+                logger.warning(
+                    f"LLM query error: {str(e)}, retrying in {delay:.2f}s (attempt {attempt+1}/{self.max_retries})"
+                )
                 await asyncio.sleep(delay)
 
     def _create_explanation_request(
@@ -380,16 +401,18 @@ class ShapLLMExplainer:
         Raises:
             RuntimeError: If the LLM query fails.
         """
-        logger.info(f"Generating explanation for prediction: {prediction:.4f}" + 
-                   (f" (class: {prediction_class})" if prediction_class else ""))
-        
+        logger.info(
+            f"Generating explanation for prediction: {prediction:.4f}"
+            + (f" (class: {prediction_class})" if prediction_class else "")
+        )
+
         prompt, _ = self._create_explanation_request(
             shap_values, data_point, prediction, prediction_class, additional_context
         )
-        
+
         logger.debug("Querying LLM for explanation")
         response = self._query_llm(prompt)
-        
+
         logger.info("Explanation generated successfully")
         return SHAPExplanationResponse.model_validate(response)
 
@@ -417,16 +440,18 @@ class ShapLLMExplainer:
         Raises:
             RuntimeError: If the LLM query fails.
         """
-        logger.info(f"Generating async explanation for prediction: {prediction:.4f}" + 
-                   (f" (class: {prediction_class})" if prediction_class else ""))
-        
+        logger.info(
+            f"Generating async explanation for prediction: {prediction:.4f}"
+            + (f" (class: {prediction_class})" if prediction_class else "")
+        )
+
         prompt, _ = self._create_explanation_request(
             shap_values, data_point, prediction, prediction_class, additional_context
         )
-        
+
         logger.debug("Querying LLM asynchronously for explanation")
         response = await self._query_llm_async(prompt)
-        
+
         logger.info("Async explanation generated successfully")
         return SHAPExplanationResponse.model_validate(response)
 
