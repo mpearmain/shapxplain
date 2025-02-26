@@ -1,9 +1,10 @@
 import pytest
 import numpy as np
 import json
+import logging
 from dataclasses import dataclass
 import asyncio
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock, AsyncMock, patch
 from shapxplain.explainers import ShapLLMExplainer
 from shapxplain.schemas import (
     SHAPExplanationResponse,
@@ -11,6 +12,7 @@ from shapxplain.schemas import (
     ContributionDirection,
     SignificanceLevel,
 )
+from shapxplain.utils import logger
 
 
 @dataclass
@@ -61,6 +63,9 @@ def mock_agent(mock_llm_response):
 @pytest.fixture
 def mock_explainer(mock_agent):
     """Fixture to provide a ShapLLMExplainer with a mock agent."""
+    # Set logger to a higher level to avoid cluttering test output
+    logger.setLevel(logging.WARNING)
+    
     mock_model = MagicMock()
     mock_model.__class__.__name__ = "MockModel"
     return ShapLLMExplainer(
